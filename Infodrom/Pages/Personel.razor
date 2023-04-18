@@ -1,0 +1,104 @@
+﻿@page "/personel"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject SweetAlertService swal
+
+<h3>Personel</h3>
+
+<MudButton Color="Color.Primary" Variant="@MudBlazor.Variant.Outlined" OnClick="AddPersonel">
+    Personel Ekle
+</MudButton>
+<table class="table">
+<thead>
+    <tr>
+        <th>ID</th>
+        <th>Sicil No</th>
+        <th>Ad</th>
+        <th>Soyad</th>
+        <th>Organizasyon Adı</th>
+        <th>İşlemler</th>
+    </tr>
+</thead>
+<tbody>
+    @foreach (var personel in personelListesi)
+    {
+        <tr>
+            <td>@personel.Id</td>
+            <td>@personel.Sicilo</td>
+            <td>@personel.Ad</td>
+            <td>@personel.Soyad</td>
+            @if(personel.Organization_Id == null)
+            {
+                <td>Organizasyon Yok</td>
+            }
+            else
+            {
+                <td>@personel.OrganizationAd</td>
+            }
+            <td>
+                    <button type="button" class="btn btn-danger" @onclick="() => DeletePersonel(personel.Id)">Delete</button>
+                    <button type="button" @onclick="() => UpdatePersonel(personel.Id)" class="btn btn-primary">Edit</button>
+            </td>
+        </tr>
+    }
+</tbody>
+
+</table>
+
+
+
+@code {
+    private List<PersonelModel> personelListesi = new List<PersonelModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetPersonel();
+    }
+
+    protected async Task GetPersonel()
+    {
+        string apiUrl = "https://localhost:7122/api/Personel/personeller/";
+        var response = await Http.GetAsync(apiUrl);
+        response.EnsureSuccessStatusCode();
+        string responseBodyJson = await response.Content.ReadAsStringAsync();
+        personelListesi = JsonConvert.DeserializeObject<List<PersonelModel>>(responseBodyJson);
+    }
+
+    private void AddPersonel()
+    {
+        NavigationManager.NavigateTo("/add-personel");
+    }
+
+    private void UpdatePersonel(int id)
+    {
+        NavigationManager.NavigateTo($"/update-personel/{id}");
+    }
+
+
+    private async void DeletePersonel(int id)
+    {
+        string apiUrl = "https://localhost:7122/api/personel/delete-personel/" + id;
+        var response = await Http.DeleteAsync(apiUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Personel Kaydedildi",
+                    Icon = SweetAlertIcon.Success
+
+                });
+            await GetPersonel();
+        }
+        else
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bir hata ile karşılaştık",
+                    Icon = SweetAlertIcon.Error
+                });
+            
+        }
+        
+
+    }   
+}

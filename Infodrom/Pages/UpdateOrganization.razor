@@ -1,0 +1,72 @@
+﻿@page "/update-org/{Id:int}"
+@using Infodrom.Shared.Models;
+@using Newtonsoft.Json;
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Update Student</PageTitle>
+
+<h1>Update Student</h1>
+
+<EditForm Model="@organization" OnValidSubmit="UpdateOrg">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="FirstName" class="form-label">Ad</label>
+        <div class="col-md-4">
+            <InputText class="form-control" @bind-Value="organization.Ad" />
+        </div>
+        <ValidationMessage For="@(() => organization.Ad)" />
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button class="btn btn-light" @onclick="Cancel">Cancel</button>
+    </div>
+</EditForm>
+
+
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    protected OrganizationModel organization = new();
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        string apiUrl = "https://localhost:7122/api/organization/get-org-list";
+        var response = await Http.GetAsync(apiUrl);
+        response.EnsureSuccessStatusCode();
+        string responseBodyJson = await response.Content.ReadAsStringAsync();
+
+
+        var orglist = JsonConvert.DeserializeObject<List<OrganizationModel>>(responseBodyJson);
+
+        organization = orglist.Where(x => x.Id == Id).FirstOrDefault();
+    }
+
+
+
+    protected async Task UpdateOrg()
+    {
+        string apiUrl = "https://localhost:7122/api/Organization/update-org";
+
+
+        if (organization.Id < 1)
+        {
+            return;
+        }
+
+        await Http.PostAsJsonAsync(apiUrl, organization);
+        NavigationManager.NavigateTo("/organizasyon");
+    }
+
+    protected async Task Cancel()
+    {
+
+    }
+}

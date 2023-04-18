@@ -1,0 +1,109 @@
+﻿@page "/update-personel/{Id}"
+@using System.Net;
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Update Personel</PageTitle>
+@if (organizations != null && personel != null)
+{
+    <EditForm Model="@personel" OnValidSubmit="UpdatedPersonel">
+        <DataAnnotationsValidator />
+        <div class="mb-3">
+            <label for="FirstName" class="form-label">Sicil No</label>
+            <div class="col-md-4">
+                <InputNumber class="form-control" @bind-Value="personel.Sicilo" />
+            </div>
+            <ValidationMessage For="@(() => personel.Sicilo)" />
+        </div>
+        <div class="mb-3">
+            <label for="FirstName" class="form-label">Personel Adı</label>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="personel.Ad" />
+            </div>
+            <ValidationMessage For="@(() => personel.Ad)" />
+        </div>
+        <div class="mb-3">
+            <label for="FirstName" class="form-label">Personel Soyadı</label>
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="personel.Soyad" />
+            </div>
+            <ValidationMessage For="@(() => personel.Soyad)" />
+        </div>
+        <div class="mb-3">
+            <label for="OrganizationSelect" class="form-label">Organizasyon</label>
+            <div class="col-md-4">
+                <select class="form-control" @bind="personel.Organization_Id">
+                    <option value="null">Organizasyon Seçin</option>
+                    @foreach (var organization in organizations)
+                    {
+                        <option value="@organization.Id">@organization.Ad</option>
+                    }
+                </select>
+            </div>
+            <ValidationMessage For="@(() => personel.Organization_Id)" />
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Update</button>
+            <button class="btn btn-light" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public string Id { get; set; }
+    protected PersonelViewModel personel;
+    protected List<OrganizationModel> organizations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        organizations = await Http.GetFromJsonAsync<List<OrganizationModel>>("https://localhost:7122/api/Personel/organizations");
+        personel = await Http.GetFromJsonAsync<PersonelViewModel>("https://localhost:7122/api/Personel/" + Id);
+    }
+
+    protected async Task UpdatedPersonel()
+    {
+        if (personel.Ad == null)
+        {
+            return;
+        }
+
+        string apiUrl = "https://localhost:7122/api/Personel/add-update";
+        var response = await Http.PutAsJsonAsync(apiUrl, personel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Personel Güncellendi",
+                    Icon = SweetAlertIcon.Success
+                });
+            NavigationManager.NavigateTo("/personel");
+        }
+        else if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Personel Güncellenemedi",
+                    Text = errorMessage,
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+        else
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bir Hata Oluştu",
+                    Text = "Lütfen daha sonra tekrar deneyin.",
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+    }
+
+
+    protected async Task Cancel()
+    {
+        NavigationManager.NavigateTo("/personel");
+    }
+}

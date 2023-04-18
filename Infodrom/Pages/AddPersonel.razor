@@ -1,0 +1,113 @@
+﻿@page "/add-personel"
+@using System.Net;
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject SweetAlertService swal
+
+<PageTitle>Add New Personel</PageTitle>
+ @if (organizations != null)
+    {
+        <EditForm Model="@personel" OnValidSubmit="SavePersonel">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label for="FirstName" class="form-label">Sicil No</label>
+                <div class="col-md-4">
+                    <InputNumber class="form-control" @bind-Value="personel.Sicilo" />
+                </div>
+                <ValidationMessage For="@(() => personel.Sicilo)" />
+            </div>
+            <div class="mb-3">
+                <label for="FirstName" class="form-label">Personel Adı</label>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="personel.Ad" />
+                </div>
+                <ValidationMessage For="@(() => personel.Ad)" />
+            </div>
+            <div class="mb-3">
+                <label for="FirstName" class="form-label">Personel Soyadı</label>
+                <div class="col-md-4">
+                    <InputText class="form-control" @bind-Value="personel.Soyad" />
+                </div>
+                <ValidationMessage For="@(() => personel.Soyad)" />
+            </div>
+            <div class="mb-3">
+                <label for="OrganizationSelect" class="form-label">Organizasyon</label>
+                <div class="col-md-4">
+                <select class="form-control" @bind="personel.Organization_Id">
+                    <option value="-1">Organizasyon Seçin</option> <!-- "-1" kullanılır -->
+                    @foreach (var organization in organizations)
+                    {
+                        <option value="@organization.Id">@organization.Ad</option>
+                    }
+                </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button class="btn btn-light" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    }
+
+
+
+
+
+@code {
+    protected PersonelViewModel personel = new();
+    protected List<OrganizationModel> organizations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        organizations = await Http.GetFromJsonAsync<List<OrganizationModel>>("https://localhost:7122/api/Personel/organizations");
+    }
+
+    protected async Task SavePersonel()
+    {
+        string apiUrl = "https://localhost:7122/api/Personel/add-personel";
+
+        if (personel.Ad == null)
+        {
+            return;
+        }
+        if (personel.Organization_Id == -1) // -1 kontrolü
+        {
+            personel.Organization_Id = null; // NULL değeri atanır
+        }
+        var response = await Http.PostAsJsonAsync(apiUrl, personel);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Personel Kaydedildi",
+                    Icon = SweetAlertIcon.Success
+                });
+            NavigationManager.NavigateTo("/personel");
+        }
+        else if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Personel Kaydedilemedi",
+                    Text = errorMessage,
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+        else
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bir Hata Oluştu",
+                    Text = "Lütfen daha sonra tekrar deneyin.",
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+    }
+
+    protected async Task Cancel()
+    {
+        NavigationManager.NavigateTo("/personel");
+    }
+}

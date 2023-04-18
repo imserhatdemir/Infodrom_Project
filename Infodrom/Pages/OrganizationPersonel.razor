@@ -1,0 +1,110 @@
+﻿@page "/organizasyonpersonel"
+@inject HttpClient Http
+@using MudBlazor
+@using System.Text;
+@inject SweetAlertService swal
+
+<MudContainer>
+    <MudTabs Outlined="true" Position="Position.Left" Rounded="true" Border="true"
+             ApplyEffectsToContainer="true" Class="mt-8 mb-8" PanelClass="pa-6">
+        @foreach (var organization in organizationsWithPersonel)
+        {
+            <MudTabPanel Text="@organization.Ad">
+                <MudTable Dense="true" Items="organization.Personel" Filter="new Func<PersonelModel, bool>(FilterFunc)" Server="false" Class="mt-4">
+                    <ToolBarContent>
+                        <MudSpacer />
+                        <MudTextField Label="Ara" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" @bind-Value="searchString" Immediate="true" Class="mt-2" />
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh> </MudTh>
+                        <MudTh>Sicil No</MudTh>
+                        <MudTh>Ad</MudTh>
+                        <MudTh>Soyad</MudTh>
+                        <MudTh>İşlem</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd> </MudTd>
+                        <MudTd>@context.Sicilo</MudTd>
+                        <MudTd>@context.Ad</MudTd>
+                        <MudTd>@context.Soyad</MudTd>
+                        <MudTd>
+                            <MudButton Class="btn btn-warning" OnClick="@(() => ClearOrganization((int)context.Id))">ÇIKAR</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudTabPanel>
+        }
+    </MudTabs>
+</MudContainer>
+
+@code {
+    protected List<OrganizationViewModel> organizationsWithPersonel = new();
+    protected string searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetOrganizationsWithPersonel();
+    }
+
+    protected async Task GetOrganizationsWithPersonel()
+    {
+        string apiUrl = "https://localhost:7122/api/Organization/get-org-with-person";
+        var response = await Http.GetAsync(apiUrl);
+        response.EnsureSuccessStatusCode();
+        string responseBodyJson = await response.Content.ReadAsStringAsync();
+        organizationsWithPersonel = JsonConvert.DeserializeObject<List<OrganizationViewModel>>(responseBodyJson);
+    }
+
+    private bool FilterFunc(PersonelModel personel)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        if (personel.Ad.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            personel.Soyad.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            personel.Sicilo.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private async Task ClearOrganization(int id)
+    {
+        try
+        {
+            Console.WriteLine($"Personel ID: {id}");
+            var response = await Http.PutAsync($"https://localhost:7122/api/organization/clearorganization/{id}", null);
+            
+
+            if (response.IsSuccessStatusCode)
+            {
+                await GetOrganizationsWithPersonel();
+                await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Organizasyon Bilgisi Kaldırıldı",
+                        Icon = SweetAlertIcon.Success
+                    });
+            }
+            else
+            {
+                await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Bir hata ile karşılaştık",
+                        Icon = SweetAlertIcon.Error
+                    });
+            }
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Bir hata ile karşılaştık",
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+    }
+
+
+}
