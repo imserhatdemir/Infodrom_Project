@@ -15,5 +15,6 @@ namespace Infodrom.Shared.Services
         void UpdateOrganization(OrganizationModel org);
         ErrorResponse DeleteOrganizationCheck(int? OrgId);
         Task<string> ClearOrganization(int id);
+        IEnumerable<OrganizationModel> GetAllOrganizationRecursive();
     }
 }

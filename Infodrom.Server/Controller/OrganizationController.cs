@@ -1,8 +1,9 @@
 ﻿using Infodrom.Shared.Models;
 using Infodrom.Shared.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Infodrom.Server.Controller
 {
@@ -15,22 +16,15 @@ namespace Infodrom.Server.Controller
         {
             _organizationService = organizationService;
         }
-        [HttpGet]
-        [Route("get-org-list")]
-        public async Task<IActionResult> GetAllOrganization()
+        [HttpGet("get-org-list")]
+        public IActionResult GetAllOrganization()
         {
-            List<OrganizationModel> org = new List<OrganizationModel>();
-
-            org = _organizationService.GetAllOrganization().ToList();
-
+            List<OrganizationModel> org = _organizationService.GetAllOrganization().ToList();
             return Ok(org);
         }
 
-
-
-        [HttpPost]
-        [Route("post-org")]
-        public async Task<IActionResult> AddOrganization(OrganizationModel org)
+        [HttpPost("post-org")]
+        public IActionResult AddOrganization([FromBody] OrganizationModel org)
         {
             try
             {
@@ -41,12 +35,10 @@ namespace Infodrom.Server.Controller
             {
                 return BadRequest(ex.Message);
             }
-
         }
 
-        [HttpPost]
-        [Route("update-org")]
-        public async Task<IActionResult> UpdateOrganization(OrganizationModel org)
+        [HttpPut("update-org")]
+        public IActionResult UpdateOrganization([FromBody] OrganizationModel org)
         {
             try
             {
@@ -57,14 +49,12 @@ namespace Infodrom.Server.Controller
             {
                 return BadRequest(ex.Message);
             }
-
         }
 
-        [HttpDelete]
-        [Route("check/{OrgId}")]
-        public async Task<IActionResult> DeleteOrganizationCheck(int? OrgId)
+        [HttpDelete("check/{OrgId}")]
+        public IActionResult DeleteOrganizationCheck(int? OrgId)
         {
-           var result = _organizationService.DeleteOrganizationCheck(OrgId);
+            var result = _organizationService.DeleteOrganizationCheck(OrgId);
             if (result.IsSuccess)
             {
                 return Ok(result.Message);
@@ -75,15 +65,12 @@ namespace Infodrom.Server.Controller
             }
         }
 
-
-        [HttpGet]
-        [Route("get-org-with-person")]
-        public async Task<IActionResult> GetAllOrganizationsWithPersonel()
+        [HttpGet("get-org-with-person")]
+        public IActionResult GetAllOrganizationsWithPersonel()
         {
             var result = _organizationService.GetAllOrganizationsWithPersonel();
             return Ok(result);
         }
-
 
         [HttpPut("clearorganization/{id}")]
         public async Task<IActionResult> ClearOrganization(int id)
@@ -99,5 +86,11 @@ namespace Infodrom.Server.Controller
             }
         }
 
+        [HttpGet("recursive")]
+        public IActionResult GetAllOrganizationRecursive()
+        {
+            var result = _organizationService.GetAllOrganizationRecursive();
+            return Ok(result);
+        }
     }
 }

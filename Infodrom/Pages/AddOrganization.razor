@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject SweetAlertService swal
+@using Infodrom.Shared.Models
 
 <PageTitle>Add New Organization</PageTitle>
 
@@ -14,22 +15,42 @@
         </div>
         <ValidationMessage For="@(() => organization.Ad)" />
     </div>
+    <div class="mb-3">
+        <label for="ParentOrganization" class="form-label">Üst Organizasyon</label>
+        <div class="col-md-4">
+            <InputSelect class="form-control" @bind-Value="organization.ParentId">
+                <option value="">Ana Organizasyon</option>
+                @foreach (var org in organizationsList)
+                {
+                    <option value="@org.Id">@org.Ad</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
     <div class="form-group">
         <button type="submit" class="btn btn-primary">Save</button>
         <button class="btn btn-light" @onclick="Cancel">Cancel</button>
     </div>
 </EditForm>
 
-
-
-
 @code {
     protected OrganizationModel organization = new();
+    protected List<OrganizationModel> organizationsList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetOrganizations();
+    }
+
+    protected async Task GetOrganizations()
+    {
+        string apiUrl = "https://localhost:7122/api/Organization/get-org-list";
+        organizationsList = await Http.GetFromJsonAsync<List<OrganizationModel>>(apiUrl);
+    }
 
     protected async Task SaveOrg()
     {
         string apiUrl = "https://localhost:7122/api/Organization/post-org";
-
 
         if (organization.Ad == null)
         {
@@ -40,7 +61,7 @@
 
         var result = await swal.FireAsync(new SweetAlertOptions
             {
-                Title = "Organizasyon Kaydedildi Sepete Eklendi",
+                Title = "Organizasyon Eklendi",
                 Icon = SweetAlertIcon.Success
             });
         var confirm = !string.IsNullOrEmpty(result.Value);
@@ -50,6 +71,6 @@
 
     protected async Task Cancel()
     {
-
+        NavigationManager.NavigateTo("/organizasyon");
     }
 }

@@ -37,6 +37,7 @@ namespace Infodrom.Shared.Services
                     OrganizationModel student = new OrganizationModel();
                     student.Id = Convert.ToInt32(rdr["Id"]);
                     student.Ad = rdr["Ad"].ToString();
+                    student.ParentId = rdr["ParentId"] as int?;
                     lstOrg.Add(student);
                 }
                 con.Close();
@@ -44,7 +45,7 @@ namespace Infodrom.Shared.Services
             return lstOrg;
         }
 
-        //-- Func for creating new student record
+
         public void AddOrganization(OrganizationModel org)
         {
             using (SqlConnection con = new SqlConnection(ConnectionString))
@@ -52,6 +53,7 @@ namespace Infodrom.Shared.Services
                 SqlCommand cmd = new SqlCommand("AddNewOrganization", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@Ad", org.Ad);
+                cmd.Parameters.AddWithValue("@ParentId", (object)org.ParentId ?? DBNull.Value);
                 con.Open();
                 cmd.ExecuteNonQuery();
                 con.Close();
@@ -72,6 +74,7 @@ namespace Infodrom.Shared.Services
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@Id", org.Id);
                 cmd.Parameters.AddWithValue("@Ad", org.Ad);
+                cmd.Parameters.AddWithValue("@ParentId", (object)org.ParentId ?? DBNull.Value);
                 con.Open();
                 cmd.ExecuteNonQuery();
                 con.Close();
@@ -102,54 +105,6 @@ namespace Infodrom.Shared.Services
                 }
             }
         }
-
-
-
-        //public IEnumerable<OrganizationViewModel> GetAllOrganizationsWithPersonel()
-        //{
-        //    var organizationDict = new Dictionary<int, OrganizationViewModel>();
-
-        //    using (var con = new SqlConnection(ConnectionString))
-        //    {
-        //        var cmd = new SqlCommand("GetAllOrganizationsWithPersonel", con)
-        //        {
-        //            CommandType = CommandType.StoredProcedure
-        //        };
-
-        //        con.Open();
-        //        var rdr = cmd.ExecuteReader();
-
-        //        while (rdr.Read())
-        //        {
-        //            int orgId = int.Parse(rdr["OrganizationId"].ToString());
-        //            if (!organizationDict.TryGetValue(orgId, out var organization))
-        //            {
-        //                organization = new OrganizationViewModel
-        //                {
-        //                    Id = orgId,
-        //                    Ad = rdr["OrganizationAd"].ToString(),
-        //                    Personel = new List<PersonelModel>()
-        //                };
-        //                organizationDict.Add(orgId, organization);
-        //            }
-
-        //            if (!rdr.IsDBNull(rdr.GetOrdinal("PersonelId")))
-        //            {
-        //                organization.Personel.Add(new PersonelModel
-        //                {
-        //                    Id = int.Parse(rdr.GetOrdinal("PersonelId").ToString()),
-        //                    Sicilo = int.Parse(rdr.GetOrdinal("Sicilo").ToString()),
-        //                    Ad = rdr["PersonelAd"].ToString(),
-        //                    Soyad = rdr["Soyad"].ToString(),
-        //                    Organization_Id = orgId
-        //                });
-        //            }
-        //        }
-        //    }
-
-        //    return organizationDict.Values.ToList();
-        //}
-
         public async Task<string> ClearOrganization(int id)
         {
             using var connection = new SqlConnection(ConnectionString);
@@ -215,6 +170,28 @@ namespace Infodrom.Shared.Services
             }
 
             return organizationDict.Values.ToList();
+        }
+
+
+        private List<OrganizationModel> BuildRecursiveOrganizationList(IEnumerable<OrganizationModel> orgs, int? parentId)
+        {
+            var result = new List<OrganizationModel>();
+
+            var childOrgs = orgs.Where(o => o.ParentId == parentId);
+            foreach (var org in childOrgs)
+            {
+                org.Children = BuildRecursiveOrganizationList(orgs, org.Id);
+                result.Add(org);
+            }
+
+            return result;
+        }
+
+
+        public IEnumerable<OrganizationModel> GetAllOrganizationRecursive()
+        {
+            var allOrgs = GetAllOrganization();
+            return BuildRecursiveOrganizationList(allOrgs, null);
         }
 
 
