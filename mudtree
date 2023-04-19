@@ -1,0 +1,21 @@
+<MudPaper Width="500px" Elevation="0">
+            <MudTreeView T="OrganizationModel" Dense="true" Hover="true">
+                <MudTreeViewItem Value="@("Genel Müdür")">
+                    <MudTreeViewItem Value="@("Satış Müdürü")">
+                        <MudTreeViewItem Value="@("Satış Temsilcisi")">
+                            <MudTreeViewItem Value="@("Satış Operasyon Sorumlusu")"></MudTreeViewItem>
+                        </MudTreeViewItem>
+                    </MudTreeViewItem>
+                    <MudTreeViewItem Value="@("Finas Müdürü")">
+                        <MudTreeViewItem Value="@("Finans Sorumlusu")"></MudTreeViewItem>
+                    </MudTreeViewItem>
+                    <MudTreeViewItem Value="@("Yazılım Müdürü")">
+                        <MudTreeViewItem Value="@("Yazılım Uzmanı")"></MudTreeViewItem>
+                    </MudTreeViewItem>
+                    <MudTreeViewItem Value="@("Proje Müdürü")">
+                        <MudTreeViewItem Value="@("Proje Uygulama Uzmanı")"></MudTreeViewItem>
+                        <MudTreeViewItem Value="@("Proje Destek Uzmanı")"></MudTreeViewItem>
+                    </MudTreeViewItem>
+                </MudTreeViewItem>
+            </MudTreeView>
+        </MudPaper>
